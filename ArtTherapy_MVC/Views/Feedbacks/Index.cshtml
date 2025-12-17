@@ -1,0 +1,38 @@
+﻿@model IEnumerable<ArtTherapy_MVC.Models.FeedbackViewModel>
+
+@{
+    ViewBag.Title = "Lista feedback-uri";
+}
+
+<h2>Lista feedback-uri</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<p>
+    @Html.ActionLink("Adaugă feedback nou", "Create", null, new { @class = "btn btn-primary" })
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Utilizator</th>
+            <th>Lucrare artistică</th>
+            <th>Text feedback</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.NumeUtilizator</td>
+                <td>@item.TitluLucrare</td>
+                <td>@item.Text</td>
+            </tr>
+        }
+    </tbody>
+</table>

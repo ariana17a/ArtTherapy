@@ -1,0 +1,36 @@
+﻿@{
+    ViewBag.Title = "Home";
+}
+
+<div class="jumbotron">
+    <h1>ArtTherapy</h1>
+    <p class="lead">
+        ArtTherapy este o aplicație pentru monitorizarea emoțiilor și a lucrărilor artistice,
+        cu suport pentru planuri de utilizare, feedback și sesiuni de terapie.
+    </p>
+    <p>
+        Gestionați ușor planurile (Free / Standard / Premium), utilizatorii și emoțiile asociate lucrărilor.
+    </p>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Planuri de utilizare</h2>
+        <p>
+            Administrați planurile de utilizare (limita de lucrări, feedback, sesiuni de terapie, chat securizat).
+        </p>
+        <p>@Html.ActionLink("Vezi planurile", "Index", "PlanUtilizare", null, new { @class = "btn btn-primary" })</p>
+    </div>
+    <div class="col-md-4">
+        <h2>Lucrări artistice & emoții</h2>
+        <p>
+            Modelul de date permite asocierea emoțiilor cu lucrările artistice și cu utilizatorii.
+        </p>
+            </div>
+    <div class="col-md-4">
+        <h2>Tehnologie</h2>
+        <p>
+            Aplicația folosește Entity Framework Code First, SQL Server și ASP.NET MVC pentru partea web.
+        </p>
+    </div>
+</div>

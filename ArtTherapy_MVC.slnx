@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="../DemoORM_CodeFirst/LibrarieModele/LibrarieModele.csproj" Id="38994608-e7c9-4088-b342-0b40446c2f0e" />
+  <Project Path="../NivelAccesDate_DBFirst/NivelAccesDate_DBFirst.csproj" Id="66063f6e-a985-4b5a-b026-2c7452d13c61" />
+  <Project Path="../Repository_CodeFirst/Repository_CodeFirst.csproj" Id="2df0452e-a1fe-46e4-87e9-966d84360e43" />
+  <Project Path="../Repository_DBFirst/Repository_DBFirst.csproj" Id="f7ad5d1e-4801-41df-980e-c932769760a8" />
+  <Project Path="ArtTherapy_API/ArtTherapy_API.vbproj" Id="0be5a21a-4a33-467e-b5ee-8a71e2692c55" />
+  <Project Path="ArtTherapy_MVC/ArtTherapy_MVC.csproj" Id="94a94775-fcd6-4e65-b435-3eb9ace9b125" />
+</Solution>

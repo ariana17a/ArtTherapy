@@ -1,0 +1,80 @@
+﻿@model LibrarieModele.PlanUtilizare
+
+@{
+    ViewBag.Title = "Delete";
+}
+
+<h2>Delete</h2>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>PlanUtilizare</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.Nume)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Nume)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Descriere)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Descriere)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.LimitaLucrari)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.LimitaLucrari)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.EmotiiExtinse)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.EmotiiExtinse)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.FeedbackDeblocabil)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.FeedbackDeblocabil)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SesiuniTerapie)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SesiuniTerapie)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ChatSecurizat)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ChatSecurizat)
+        </dd>
+
+    </dl>
+
+    @using (Html.BeginForm()) {
+        @Html.AntiForgeryToken()
+
+        <div class="form-actions no-color">
+            <input type="submit" value="Delete" class="btn btn-default" /> |
+            @Html.ActionLink("Back to List", "Index")
+        </div>
+    }
+</div>

@@ -1,0 +1,84 @@
+﻿@{
+    ViewBag.Title = "Planuri (din API)";
+}
+
+<h2>Planuri (din API)</h2>
+
+<p>
+    API base: <code id="apiBase"></code>
+</p>
+
+<button onclick="loadPlans()">Reload</button>
+
+<hr />
+
+<h3>Adaugă plan</h3>
+<input id="nume" placeholder="Nume" />
+<input id="descriere" placeholder="Descriere" />
+<button onclick="createPlan()">Create</button>
+
+<hr />
+
+<table border="1" cellpadding="6">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nume</th>
+            <th>Descriere</th>
+            <th>Acțiuni</th>
+        </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+</table>
+
+<script>
+    // IMPORTANT: pune aici PORTUL real al API-ului tău
+    const API = "http://localhost:44311/api/PlanUtilizare";
+    document.getElementById("apiBase").innerText = API;
+
+    async function loadPlans() {
+        const res = await fetch(API);
+        if (!res.ok) { alert("GET failed: " + res.status); return; }
+
+        const data = await res.json();
+        const tbody = document.getElementById("rows");
+        tbody.innerHTML = "";
+
+        data.forEach(p => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${p.Id}</td>
+                <td>${p.Nume ?? ""}</td>
+                <td>${p.Descriere ?? ""}</td>
+                <td>
+                    <button onclick="del(${p.Id})">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function createPlan() {
+        const payload = {
+            Nume: document.getElementById("nume").value,
+            Descriere: document.getElementById("descriere").value
+        };
+
+        const res = await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) { alert("POST failed: " + res.status); return; }
+        await loadPlans();
+    }
+
+    async function del(id) {
+        const res = await fetch(`${API}/${id}`, { method: "DELETE" });
+        if (!res.ok) { alert("DELETE failed: " + res.status); return; }
+        await loadPlans();
+    }
+
+    loadPlans();
+</script>

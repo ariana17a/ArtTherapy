@@ -1,0 +1,42 @@
+﻿@model IEnumerable<LibrarieModele.PlanUtilizare>
+
+@{
+    ViewBag.Title = "Planuri de utilizare";
+}
+
+<h2>Planuri de utilizare</h2>
+
+<p>
+    @Html.ActionLink("Creează plan nou", "Create", null, new { @class = "btn btn-primary" })
+</p>
+
+<table class="table table-striped">
+    <tr>
+        <th>@Html.DisplayNameFor(model => model.Nume)</th>
+        <th>@Html.DisplayNameFor(model => model.Descriere)</th>
+        <th>@Html.DisplayNameFor(model => model.LimitaLucrari)</th>
+        <th>@Html.DisplayNameFor(model => model.EmotiiExtinse)</th>
+        <th>@Html.DisplayNameFor(model => model.FeedbackDeblocabil)</th>
+        <th>@Html.DisplayNameFor(model => model.SesiuniTerapie)</th>
+        <th>@Html.DisplayNameFor(model => model.ChatSecurizat)</th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@Html.DisplayFor(modelItem => item.Nume)</td>
+            <td>@Html.DisplayFor(modelItem => item.Descriere)</td>
+            <td>@Html.DisplayFor(modelItem => item.LimitaLucrari)</td>
+            <td>@Html.DisplayFor(modelItem => item.EmotiiExtinse)</td>
+            <td>@Html.DisplayFor(modelItem => item.FeedbackDeblocabil)</td>
+            <td>@Html.DisplayFor(modelItem => item.SesiuniTerapie)</td>
+            <td>@Html.DisplayFor(modelItem => item.ChatSecurizat)</td>
+            <td>
+                @Html.ActionLink("Detalii", "Details", new { id = item.Id }, new { @class = "btn btn-info btn-sm" }) |
+                @Html.ActionLink("Editează", "Edit", new { id = item.Id }, new { @class = "btn btn-warning btn-sm" }) |
+                @Html.ActionLink("Șterge", "Delete", new { id = item.Id }, new { @class = "btn btn-danger btn-sm" })
+            </td>
+        </tr>
+    }
+</table>

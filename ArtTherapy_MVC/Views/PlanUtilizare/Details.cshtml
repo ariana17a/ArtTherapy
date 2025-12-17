@@ -1,0 +1,74 @@
+﻿@model LibrarieModele.PlanUtilizare
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>PlanUtilizare</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.Nume)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Nume)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Descriere)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Descriere)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.LimitaLucrari)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.LimitaLucrari)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.EmotiiExtinse)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.EmotiiExtinse)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.FeedbackDeblocabil)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.FeedbackDeblocabil)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SesiuniTerapie)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SesiuniTerapie)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ChatSecurizat)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ChatSecurizat)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>
