@@ -179,6 +179,7 @@
     <Compile Include="App_Start\BundleConfig.vb" />
     <Compile Include="App_Start\FilterConfig.vb" />
     <Compile Include="App_Start\RouteConfig.vb" />
+    <Compile Include="App_Start\SimpleResolver.vb" />
     <Compile Include="App_Start\WebApiConfig.vb" />
     <Compile Include="Areas\HelpPage\ApiDescriptionExtensions.vb" />
     <Compile Include="Areas\HelpPage\App_Start\HelpPageConfig.vb" />
@@ -227,6 +228,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Services\IPlanuriService.vb" />
+    <Compile Include="Services\PlanuriService.vb" />
     <Compile Include="ValuesController1.vb" />
   </ItemGroup>
   <ItemGroup>

@@ -22,6 +22,11 @@ namespace ArtTherapy_MVC.Controllers
             return View(await db.PlanuriUtilizare.ToListAsync());
         }
 
+        public ActionResult ApiCrud()
+        {
+            return View();
+        }
+
         // GET: PlanUtilizare/Details/5
         public async Task<ActionResult> Details(int? id)
         {

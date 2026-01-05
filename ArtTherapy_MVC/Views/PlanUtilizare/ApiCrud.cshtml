@@ -8,23 +8,31 @@
     API base: <code id="apiBase"></code>
 </p>
 
-<button onclick="loadPlans()">Reload</button>
+<button type="button" onclick="loadPlans()">Reload</button>
 
 <hr />
+
+<div id="status" style="padding:8px; margin:8px 0; display:none;"></div>
 
 <h3>Adaugă plan</h3>
-<input id="nume" placeholder="Nume" />
-<input id="descriere" placeholder="Descriere" />
-<button onclick="createPlan()">Create</button>
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <input id="nume" placeholder="Nume" />
+    <input id="descriere" placeholder="Descriere" />
+    <input id="limitaLucrari" type="number" placeholder="LimitaLucrari" />
+    <button type="button" onclick="createPlan()">Create</button>
+</div>
 
 <hr />
 
-<table border="1" cellpadding="6">
+<div id="emptyMessage" style="display:none">Nu există planuri în DB.</div>
+
+<table border="1" cellpadding="6" id="plansTable" style="border-collapse:collapse;">
     <thead>
         <tr>
             <th>Id</th>
             <th>Nume</th>
             <th>Descriere</th>
+            <th>LimitaLucrari</th>
             <th>Acțiuni</th>
         </tr>
     </thead>
@@ -32,53 +40,207 @@
 </table>
 
 <script>
-    // IMPORTANT: pune aici PORTUL real al API-ului tău
-    const API = "http://localhost:44311/api/PlanUtilizare";
-    document.getElementById("apiBase").innerText = API;
+    // IMPORTANT: portul API trebuie să fie cel al proiectului ArtTherapy_API
+    const API_BASE_URL = "https://localhost:44311/api/PlanUtilizare";
+    document.getElementById("apiBase").innerText = API_BASE_URL;
+
+    function setStatus(message, kind) {
+        const el = document.getElementById("status");
+        if (!message) {
+            el.style.display = "none";
+            el.innerText = "";
+            return;
+        }
+        el.style.display = "block";
+        el.innerText = message;
+
+        // kind: "ok" | "warn" | "err"
+        el.style.border = "1px solid #999";
+        el.style.background = "#f5f5f5";
+        if (kind === "ok") el.style.background = "#e9ffe9";
+        if (kind === "warn") el.style.background = "#fff7d6";
+        if (kind === "err") el.style.background = "#ffe3e3";
+    }
+
+    // Normalizează câmpurile indiferent de casing
+    function normalizePlan(p) {
+        return {
+            id: p.Id ?? p.id,
+            nume: p.Nume ?? p.nume ?? "",
+            descriere: p.Descriere ?? p.descriere ?? "",
+            limitaLucrari: p.LimitaLucrari ?? p.limitaLucrari ?? ""
+        };
+    }
+
+    async function safeReadJson(res) {
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+
+        // Dacă API mai dă XML din greșeală, nu crăpăm
+        const text = await res.text();
+
+        if (ct.includes("application/json") || text.trim().startsWith("[") || text.trim().startsWith("{")) {
+            try { return JSON.parse(text); }
+            catch { throw new Error("Răspuns invalid JSON: " + text.substring(0, 200)); }
+        }
+
+        // XML / alt content
+        throw new Error("API nu a returnat JSON. Content-Type=" + ct + " (primele caractere: " + text.substring(0, 120) + ")");
+    }
 
     async function loadPlans() {
-        const res = await fetch(API);
-        if (!res.ok) { alert("GET failed: " + res.status); return; }
+        setStatus("Se încarcă...", "warn");
 
-        const data = await res.json();
-        const tbody = document.getElementById("rows");
-        tbody.innerHTML = "";
+        try {
+            const res = await fetch(API_BASE_URL, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                }
+            });
 
-        data.forEach(p => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${p.Id}</td>
-                <td>${p.Nume ?? ""}</td>
-                <td>${p.Descriere ?? ""}</td>
-                <td>
-                    <button onclick="del(${p.Id})">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+            if (!res.ok) {
+                const body = await res.text();
+                console.error("GET failed", res.status, body);
+                setStatus("GET failed: " + res.status + " " + body, "err");
+                return;
+            }
+
+            const data = await safeReadJson(res);
+
+            const tbody = document.getElementById("rows");
+            tbody.innerHTML = "";
+
+            if (!data || data.length === 0) {
+                document.getElementById("plansTable").style.display = "none";
+                document.getElementById("emptyMessage").style.display = "block";
+                setStatus("OK: nu există planuri în DB.", "ok");
+                return;
+            }
+
+            document.getElementById("plansTable").style.display = "";
+            document.getElementById("emptyMessage").style.display = "none";
+
+            data.map(normalizePlan).forEach(p => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${escapeHtml(p.nume)}</td>
+                    <td>${escapeHtml(p.descriere)}</td>
+                    <td>${p.limitaLucrari}</td>
+                    <td>
+                        <button type="button" onclick="del(${p.id})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            setStatus("OK: planuri încărcate (" + data.length + ").", "ok");
+        }
+        catch (err) {
+            console.error("Error fetching plans", err);
+            setStatus("Error fetching plans: " + err.message, "err");
+        }
     }
 
     async function createPlan() {
-        const payload = {
-            Nume: document.getElementById("nume").value,
-            Descriere: document.getElementById("descriere").value
-        };
+        setStatus("Se creează planul...", "warn");
 
-        const res = await fetch(API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+        try {
+            const nume = document.getElementById("nume").value?.trim();
+            const descriere = document.getElementById("descriere").value?.trim();
+            const limitaLucrariRaw = document.getElementById("limitaLucrari").value;
 
-        if (!res.ok) { alert("POST failed: " + res.status); return; }
-        await loadPlans();
+            if (!nume) {
+                setStatus("Completează Nume înainte de Create.", "warn");
+                return;
+            }
+
+            // Dacă modelul permite null, poți lăsa gol; altfel trimitem 0
+            const limitaLucrari = (limitaLucrariRaw === "" || limitaLucrariRaw == null)
+                ? 0
+                : parseInt(limitaLucrariRaw, 10);
+
+            const payload = {
+                Nume: nume,
+                Descriere: descriere,
+                LimitaLucrari: limitaLucrari
+            };
+
+            const res = await fetch(API_BASE_URL, {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const body = await res.text();
+                console.error("POST failed", res.status, body);
+                setStatus("POST failed: " + res.status + " " + body, "err");
+                return;
+            }
+
+            // curățăm inputs
+            document.getElementById("nume").value = "";
+            document.getElementById("descriere").value = "";
+            document.getElementById("limitaLucrari").value = "";
+
+            await loadPlans();
+        }
+        catch (err) {
+            console.error("Error creating plan", err);
+            setStatus("Error creating plan: " + err.message, "err");
+        }
     }
 
     async function del(id) {
-        const res = await fetch(`${API}/${id}`, { method: "DELETE" });
-        if (!res.ok) { alert("DELETE failed: " + res.status); return; }
-        await loadPlans();
+        // confirm
+        if (!confirm("Sigur vrei să ștergi acest plan?")) return;
+
+        // normalize id to integer
+        const idNum = Number(id);
+        if (!Number.isInteger(idNum)) { setStatus("Id invalid", "err"); return; }
+
+        setStatus("Se șterge planul " + idNum + "...", "warn");
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/${idNum}`, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+
+            if (res.ok) {
+                setStatus("Planul a fost șters.", "ok");
+                await loadPlans();
+                return;
+            }
+
+            const body = await res.text();
+            if (res.status === 404) {
+                setStatus("Planul nu a fost găsit.", "err");
+            } else {
+                console.error("DELETE failed", res.status, body);
+                setStatus("DELETE failed: " + res.status + " " + body, "err");
+            }
+        }
+        catch (err) {
+            console.error("Error deleting plan", err);
+            setStatus("Eroare la ștergere: " + err.message, "err");
+        }
     }
 
+    // mic helper ca să nu injectăm HTML în tabel
+    function escapeHtml(s) {
+        return String(s ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+
+    // auto-load
     loadPlans();
 </script>
