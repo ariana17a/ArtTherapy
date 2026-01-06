@@ -1,42 +1,154 @@
 ﻿@model IEnumerable<LibrarieModele.PlanUtilizare>
-
 @{
     ViewBag.Title = "Planuri de utilizare";
 }
 
-<h2>Planuri de utilizare</h2>
+@section Styles {
+    <link href="~/Content/planuri-pastel.css" rel="stylesheet" />
+}
 
-<p>
-    @Html.ActionLink("Creează plan nou", "Create", null, new { @class = "btn btn-primary" })
-</p>
+<div class="plans-hero">
+    <div class="title">Planuri de utilizare</div>
+    <div class="subtitle">Alege un plan care te susține: exprimare emoțională, reducere a stresului și reflecție ghidată.</div>
+    
+    <form method="get" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px;">
+        <input type="text" name="search" placeholder="Caută plan..." value="@Request["search"]" class="form-control" style="max-width:250px; border-radius:10px; border:1px solid #ffe8f1;" />
+        <select name="sort" class="form-control" style="max-width:180px; border-radius:10px; border:1px solid #ffe8f1;">
+            <option value="">Sortează după...</option>
+            <option value="nume" @(Request["sort"] == "nume" ? "selected" : "")>Nume (A-Z)</option>
+            <option value="limita" @(Request["sort"] == "limita" ? "selected" : "")>Limită lucrări</option>
+        </select>
+        <button type="submit" class="btn-soft" style="padding:8px 16px;">Aplică</button>
+        @if (!string.IsNullOrEmpty(Request["search"]) || !string.IsNullOrEmpty(Request["sort"]))
+        {
+            <a href="@Url.Action("Index")" class="btn-ghost" style="padding:8px 16px;">Resetează</a>
+        }
+    </form>
 
-<table class="table table-striped">
-    <tr>
-        <th>@Html.DisplayNameFor(model => model.Nume)</th>
-        <th>@Html.DisplayNameFor(model => model.Descriere)</th>
-        <th>@Html.DisplayNameFor(model => model.LimitaLucrari)</th>
-        <th>@Html.DisplayNameFor(model => model.EmotiiExtinse)</th>
-        <th>@Html.DisplayNameFor(model => model.FeedbackDeblocabil)</th>
-        <th>@Html.DisplayNameFor(model => model.SesiuniTerapie)</th>
-        <th>@Html.DisplayNameFor(model => model.ChatSecurizat)</th>
-        <th></th>
-    </tr>
+    <div style="margin-top:14px;">
+        @Html.ActionLink("Creează plan nou", "Create", null, new { @class = "btn btn-soft" })
+    </div>
+</div>
 
-    @foreach (var item in Model)
-    {
-        <tr>
-            <td>@Html.DisplayFor(modelItem => item.Nume)</td>
-            <td>@Html.DisplayFor(modelItem => item.Descriere)</td>
-            <td>@Html.DisplayFor(modelItem => item.LimitaLucrari)</td>
-            <td>@Html.DisplayFor(modelItem => item.EmotiiExtinse)</td>
-            <td>@Html.DisplayFor(modelItem => item.FeedbackDeblocabil)</td>
-            <td>@Html.DisplayFor(modelItem => item.SesiuniTerapie)</td>
-            <td>@Html.DisplayFor(modelItem => item.ChatSecurizat)</td>
-            <td>
-                @Html.ActionLink("Detalii", "Details", new { id = item.Id }, new { @class = "btn btn-info btn-sm" }) |
-                @Html.ActionLink("Editează", "Edit", new { id = item.Id }, new { @class = "btn btn-warning btn-sm" }) |
-                @Html.ActionLink("Șterge", "Delete", new { id = item.Id }, new { @class = "btn btn-danger btn-sm" })
-            </td>
-        </tr>
-    }
-</table>
+<div style="height:18px;"></div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="empty-card">
+        <div class="lead">Nu există planuri încă.</div>
+        <div class="muted">Creează primul plan și va apărea aici în format de card.</div>
+        <div style="margin-top:12px;">
+            @Html.ActionLink("Creează plan nou", "Create", null, new { @class = "btn btn-choose" })
+        </div>
+    </div>
+}
+else
+{
+    <div class="plans-grid">
+        @{ var index = 0; }
+        @foreach (var p in Model)
+        {
+            var nameLower = (p.Nume ?? "").ToLowerInvariant();
+
+            // determine plan type by substring (handles extra text like price)
+            bool isFree = nameLower.Contains("free") || nameLower.Contains("gratis");
+            bool isPro = nameLower.Contains("pro") && !isFree;
+            bool isPremium = nameLower.Contains("premium") || nameLower.Contains("ultimate");
+
+            // default values from model if provided
+            int displayLimit = p.LimitaLucrari.HasValue ? p.LimitaLucrari.Value : 0;
+            int sessionsCount = 0;
+
+            if (isFree)
+            {
+                displayLimit = 5;
+                sessionsCount = 1;
+            }
+            else if (isPro)
+            {
+                displayLimit = 15;
+                sessionsCount = 5;
+            }
+            else if (isPremium)
+            {
+                displayLimit = 25;
+                sessionsCount = 10;
+            }
+            else
+            {
+                // fallback: if model has boolean, show at least 1 session
+                if (p.SesiuniTerapie) { sessionsCount = 1; }
+            }
+
+            var isPopular = isPro || (index == 1);
+
+            <div class="plan-card">
+                @if (isPopular) { <div class="plan-badge">Popular</div> }
+
+                <div class="plan-name">@p.Nume</div>
+                <div class="plan-desc">@(!String.IsNullOrWhiteSpace(p.Descriere) ? p.Descriere : "Plan personalizabil pentru ritmul tău.")</div>
+
+                <ul class="benefit-list">
+                    @if (p.EmotiiExtinse)
+                    {
+                        <li class="benefit-item">
+                            <div class="benefit-icon">🎨</div>
+                            <div>
+                                <div class="benefit-text">Emoții extinse</div>
+                                <div class="benefit-subtle">Explorare și exprimare prin creație</div>
+                            </div>
+                        </li>
+                    }
+
+                    @if (p.FeedbackDeblocabil)
+                    {
+                        <li class="benefit-item">
+                            <div class="benefit-icon">💬</div>
+                            <div>
+                                <div class="benefit-text">Feedback deblocabil</div>
+                                <div class="benefit-subtle">Primești feedback când atingi praguri</div>
+                            </div>
+                        </li>
+                    }
+
+                    @if (sessionsCount > 0)
+                    {
+                        <li class="benefit-item">
+                            <div class="benefit-icon">🌿</div>
+                            <div>
+                                <div class="benefit-text">Sesiuni terapie: @sessionsCount</div>
+                                <div class="benefit-subtle">Întâlniri ghidate cu terapeut</div>
+                            </div>
+                        </li>
+                    }
+
+                    @if (p.ChatSecurizat)
+                    {
+                        <li class="benefit-item">
+                            <div class="benefit-icon">💗</div>
+                            <div>
+                                <div class="benefit-text">Chat securizat</div>
+                                <div class="benefit-subtle">Conversații private și sigure</div>
+                            </div>
+                        </li>
+                    }
+
+                    <li class="benefit-item">
+                        <div class="benefit-icon">🖼️</div>
+                        <div>
+                            <div class="benefit-text">Limita lucrări: @(displayLimit > 0 ? displayLimit.ToString() : "Nelimitat")</div>
+                            <div class="benefit-subtle">Nr. de lucrări încărcabile</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="plan-cta" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                    <a href="@Url.Action("Details", "PlanUtilizare", new { id = p.Id })" class="btn-choose">Alege planul</a>
+                    @Html.ActionLink("Edit", "Edit", new { id = p.Id }, new { @class = "btn-ghost-2" })
+                    @Html.ActionLink("Delete", "Delete", new { id = p.Id }, new { @class = "btn-ghost-2" })
+                </div>
+            </div>
+            index++;
+        }
+    </div>
+}

@@ -13,7 +13,9 @@ Namespace ArtTherapy_API.Controllers
 
         ' Parameterless constructor for Web API when DI is not configured
         Public Sub New()
-            Me.New(New PlanuriService())
+            ' Create cache and service and assign to field
+            Dim cache = New MemoryCacheService()
+            _service = New PlanuriService(cache)
         End Sub
 
         ' Constructor for DI

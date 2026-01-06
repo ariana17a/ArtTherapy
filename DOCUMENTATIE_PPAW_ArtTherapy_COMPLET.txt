@@ -1,0 +1,1088 @@
+================================================================================
+    DOCUMENTA?IE PROIECT PPAW - ArtTherapy
+================================================================================
+
+Student: Apopii Ariana
+Email: apopiiariana17@gmail.com
+An universitar: 2024-2025
+Disciplina: PPAW (Proiectarea ?i Programarea Aplica?iilor Web)
+
+================================================================================
+1. PROIECTARE
+================================================================================
+
+1.1 Paradigme utilizate
+------------------------
+
+Proiectul ArtTherapy utilizeaz? urm?toarele paradigme ?i tehnologii:
+
+MVC (Model-View-Controller)
+- Framework: ASP.NET MVC 5 pe .NET Framework 4.7.2
+- Proiect: ArtTherapy_MVC
+- Responsabilit??i:
+  * Model: LibrarieModele (PlanUtilizare, Feedback)
+  * View: Razor views (.cshtml) pentru prezentare
+  * Controller: Logic? de procesare cereri (PlanUtilizareController, 
+    FeedbacksController)
+
+Web API REST
+- Framework: ASP.NET Web API 2
+- Proiect: ArtTherapy_API (Visual Basic .NET)
+- Endpoints:
+  * GET /api/PlanUtilizare ? list? planuri (JSON)
+  * POST /api/PlanUtilizare ? creare plan nou
+  * DELETE /api/PlanUtilizare/{id} ? ?tergere plan
+
+ORM Code First
+- Tehnologie: Entity Framework 6.5.1
+- Proiect: Repository_CodeFirst
+- Context: ArtTherapyCodeFirstContext
+- Avantaj: Control complet asupra modelelor, migra?ii automate
+- Utilizat de: Proiectul MVC pentru gestionare planuri ?i feedback-uri
+
+ORM Database First
+- Tehnologie: Entity Framework 6.5.1 (EDMX)
+- Proiect: Repository_DBFirst
+- Fi?ier model: Model1.edmx
+- Clase generate: planuri_utilizare, ArtTherapyEntities (DbContext)
+- Avantaj: Generare automat? clase din baza de date existent?
+- Utilizat de: Proiectul API (Web API)
+
+Dependency Injection (DI)
+- Implementare: SimpleResolver (custom, f?r? Unity/Autofac)
+- Loca?ie: ArtTherapy_API/App_Start/SimpleResolver.vb
+- Pattern: Constructor Injection
+- Servicii injectate:
+  * IPlanuriService ? PlanuriService
+  * ICache ? MemoryCacheService
+- Singleton: MemoryCacheService partajat între requesturi
+
+Service Layer Pattern
+- Interfe?e: IPlanuriService, ICache
+- Implement?ri: PlanuriService, MemoryCacheService
+- Responsabilitate: Logic? business (validare, transform?ri) ?i acces date
+- Utilizat de: Controller API prin DI
+
+Caching Pattern
+- Interfa??: ICache
+- Implementare: MemoryCacheService (bazat pe ConcurrentDictionary)
+- Strategie:
+  * Cache la nivel de service (nu controller)
+  * Cheia: "planuri_utilizare_all"
+  * TTL: 10 minute (configurat la instan?iere)
+  * Invalidare: la Insert/Delete
+- Logging: Trace.WriteLine pentru CACHE HIT/MISS
+
+--------------------------------------------------------------------------------
+
+1.2 De ce au fost alese?
+-------------------------
+
+MVC
+- Separare clar? responsabilit??i (prezentare vs logic?)
+- Testabilitate mai bun? decât Web Forms
+- Routing flexibil ?i SEO-friendly
+- Suport nativ pentru Razor views (sintax? clean)
+
+Web API
+- Expunere servicii REST pentru consum cross-platform
+- JSON nativ (u?or de consumat din JavaScript/Angular/React)
+- Separare front-end (MVC) de back-end (API)
+- Scalabilitate independent? a celor dou? proiecte
+
+Code First
+- Control complet asupra modelelor (clasele C# dicteaz? schema DB)
+- Migra?ii automate (ad?ugare coloane f?r? SQL manual)
+- Folosit în MVC pentru c? modelele sunt simple ?i create de dezvoltator
+
+Database First
+- Baza de date deja existent? (schema definit? anterior)
+- Generare automat? clase din tabele
+- Folosit în API pentru a evita duplicarea modelelor
+
+Dependency Injection (SimpleResolver)
+- Loose coupling între Controller ?i Service
+- Testabilitate (mock-uri u?oare pentru unit testing)
+- Gestionare centralizat? a instan?elor (singleton cache)
+- Zero dependen?e externe (mai pu?ine NuGet-uri)
+
+Service Layer
+- Separare logic? business de prezentare
+- Refolosire cod (acela?i service poate fi folosit din mai multe controllere)
+- Izolare EF context (nu expui DbContext direct în controller)
+
+Caching
+- Reducere interog?ri DB (performan??)
+- TTL configurabil (date relativ statice — planuri)
+- Invalidare explicit? la modific?ri (consisten??)
+
+--------------------------------------------------------------------------------
+
+1.3 Arhitectura aplica?iei
+---------------------------
+
+Arhitectura aplica?iei este organizat? în straturi, cu separare clar? între 
+prezentare, logic? business ?i acces la date.
+
+Stratul de prezentare (CLIENT):
+- Browser-ul clientului
+- HTML/CSS/JavaScript
+- Razor Views (.cshtml)
+
+Stratul MVC (ArtTherapy_MVC):
+- Controllers (C#):
+  * PlanUtilizareController (CRUD planuri)
+  * FeedbacksController (CRUD feedback-uri)
+  * HomeController (pagini statice)
+- Models (ViewModels):
+  * PlanUtilizareViewModel.cs
+  * FeedbackViewModel.cs
+- Repository_CodeFirst (Data Access):
+  * ArtTherapyCodeFirstContext (DbContext)
+  * PlanuriUtilizare (DbSet)
+  * Feedbacks (DbSet)
+
+Stratul API (ArtTherapy_API):
+- API Controllers (VB.NET):
+  * PlanUtilizareController.vb
+    - [HttpGet] Get()
+    - [HttpPost] Post(planuri_utilizare)
+    - [HttpDelete] Delete(id)
+- Services (Business Logic):
+  * IPlanuriService (interfa??)
+  * PlanuriService (implementare)
+    - GetAll() ? cache check ? DB ? cache set
+    - Insert(p) ? DB ? cache invalidate
+    - Delete(id) ? DB ? cache invalidate
+- Cache Layer:
+  * ICache (interfa??)
+  * MemoryCacheService (ConcurrentDictionary)
+    - Get<T>(key)
+    - Set(key, data, TTL)
+    - Remove(key)
+    - Clear()
+- Repository_DBFirst (Data Access):
+  * ArtTherapyEntities (DbContext - generat EDMX)
+  * planuri_utilizare (entitate generat?)
+
+Baza de date:
+- SQL Server Database
+- Tabele: planuri_utilizare, feedbacks, utilizatori, etc.
+- Accesat? din ambele proiecte (MVC ?i API)
+
+Fluxul unei cereri tipice:
+
+GET Planuri (MVC):
+1. User ? Browser ? GET /PlanUtilizare
+2. PlanUtilizareController.Index() (MVC)
+3. db.PlanuriUtilizare.ToListAsync() (EF Code First)
+4. SQL Server ? returneaz? date
+5. View Index.cshtml ? render HTML cu carduri
+6. Browser ? afi?eaz? pagina
+
+GET Planuri (API cu cache):
+1. Client ? GET /api/PlanUtilizare
+2. PlanUtilizareController.Get() (API)
+3. PlanuriService.GetAll()
+   - Check cache: _cache.IsSet("planuri_utilizare_all")?
+   - CACHE HIT ? return din memorie (log: "CACHE HIT")
+   - CACHE MISS ? interogare DB (EF DB First) ? save în cache ? return 
+     (log: "CACHE MISS")
+4. JSON serialization (Newtonsoft.Json)
+5. Response: 200 OK + JSON array
+
+DELETE Plan (API cu cache invalidation):
+1. Client ? DELETE /api/PlanUtilizare/5
+2. PlanUtilizareController.Delete(5) (API)
+3. PlanuriService.Delete(5)
+   - Find entity în DB (EF DB First)
+   - ctx.planuri_utilizare.Remove(entity)
+   - ctx.SaveChanges()
+   - Cache invalidate: _cache.Remove("planuri_utilizare_all")
+   - Log: "Invalidating cache"
+4. Response: 204 NoContent
+
+
+================================================================================
+2. IMPLEMENTARE
+================================================================================
+
+2.1 Business Layer – explicat
+------------------------------
+
+Structura:
+ArtTherapy_API/Services/
+  - IPlanuriService.vb       (interfa??)
+  - PlanuriService.vb        (implementare)
+  - ICache.vb                (interfa?? cache)
+  - MemoryCacheService.vb    (implementare cache)
+
+IPlanuriService.vb - Contract pentru opera?iuni CRUD:
+
+Public Interface IPlanuriService
+    Function GetAll() As IEnumerable(Of planuri_utilizare)
+    Function Insert(p As planuri_utilizare) As planuri_utilizare
+    Function Delete(id As Integer) As Boolean
+End Interface
+
+- Contract clar pentru opera?iuni CRUD
+- Permite mock-uri în unit testing
+- Abstractizare fa?? de implementarea concret?
+
+PlanuriService.vb - Logica business:
+
+1. Constructor Injection:
+Private ReadOnly _cache As ICache
+Public Sub New(cache As ICache)
+    _cache = cache
+End Sub
+
+- Prime?te cache-ul prin DI
+- Nu instan?iaz? direct dependen?ele (loose coupling)
+
+2. GetAll() - cu caching:
+
+Public Function GetAll() As IEnumerable(Of planuri_utilizare)
+    ' 1) Verificare cache
+    If _cache IsNot Nothing AndAlso _cache.IsSet(CACHE_KEY) Then
+        Trace.WriteLine("CACHE HIT: " & CACHE_KEY)
+        Return _cache.Get(Of List(Of planuri_utilizare))(CACHE_KEY)
+    End If
+
+    ' 2) Cache miss ? interogare DB
+    Trace.WriteLine("CACHE MISS: " & CACHE_KEY)
+    Using ctx As New ArtTherapyEntities()
+        ctx.Configuration.LazyLoadingEnabled = False
+        ctx.Configuration.ProxyCreationEnabled = False
+        Dim data = ctx.planuri_utilizare.ToList()
+        
+        ' 3) Salvare în cache
+        If _cache IsNot Nothing Then
+            _cache.Set(CACHE_KEY, data)
+        End If
+        
+        Return data
+    End Using
+End Function
+
+Logic?:
+- Cache first: verific? mereu cache-ul înainte de DB
+- Lazy/Proxy disabled: previne erori de serializare JSON 
+  (circular references)
+- Logging: Trace pentru debugging (vizibil în Output window VS)
+
+3. Insert() - cu invalidare cache:
+
+Public Function Insert(p As planuri_utilizare) As planuri_utilizare
+    Using ctx As New ArtTherapyEntities()
+        Dim entity = New planuri_utilizare() With {
+            .nume = p.nume,
+            .descriere = p.descriere,
+            .limita_lucrari = p.limita_lucrari,
+            .emotii_extinse = p.emotii_extinse,
+            .feedback_deblocabil = p.feedback_deblocabil,
+            .sesiuni_terapie = p.sesiuni_terapie,
+            .chat_securizat = p.chat_securizat
+        }
+        
+        ctx.planuri_utilizare.Add(entity)
+        ctx.SaveChanges()
+        
+        If _cache IsNot Nothing Then
+            Trace.WriteLine("Invalidating cache: " & CACHE_KEY)
+            _cache.Remove(CACHE_KEY)
+        End If
+        
+        Return entity
+    End Using
+End Function
+
+Logic?:
+- Invalidare proactiv?: dup? orice modificare în DB, ?terge cache-ul
+- Return entity cu ID: EF populeaz? automat ID-ul dup? SaveChanges()
+
+4. Delete() - cu invalidare cache:
+
+Public Function Delete(id As Integer) As Boolean
+    Using ctx As New ArtTherapyEntities()
+        Dim entity = ctx.planuri_utilizare.FirstOrDefault(
+            Function(x) x.id = id)
+        If entity Is Nothing Then Return False
+        
+        ctx.planuri_utilizare.Remove(entity)
+        ctx.SaveChanges()
+        
+        If _cache IsNot Nothing Then
+            Trace.WriteLine("Invalidating cache: " & CACHE_KEY)
+            _cache.Remove(CACHE_KEY)
+        End If
+        
+        Return True
+    End Using
+End Function
+
+Logic?:
+- Safe check: returneaz? False dac? ID-ul nu exist? (nu arunc? excep?ie)
+- Invalidare cache: asigur? consisten?? (urm?torul GetAll va reînc?rca din DB)
+
+MemoryCacheService.vb - implementare cache:
+
+Private Class CacheItem
+    Public Property Value As Object
+    Public Property Expiration As DateTime?
+End Class
+
+Private ReadOnly _store As ConcurrentDictionary(Of String, CacheItem)
+
+- Thread-safe: ConcurrentDictionary pentru acces concurent
+- TTL per item: fiecare item are expirare proprie
+- Generic Get<T>: suport? orice tip (flexibilitate)
+
+Metode cheie:
+- Get<T>(key) ? verific? expirare, returneaz? Nothing dac? expirat
+- Set(key, data, TTL) ? adaug?/suprascrie cu TTL op?ional
+- IsSet(key) ? verific? existen?? + expirare
+- Remove(key) ? ?tergere explicit?
+- Clear() ? ?tergere total? (pentru reset)
+
+--------------------------------------------------------------------------------
+
+2.2 Libr?rii suplimentare utilizate
+------------------------------------
+
+Entity Framework 6.5.1
+- NuGet: EntityFramework (Microsoft)
+- Utilizare: ORM pentru ambele abord?ri (Code First în MVC, DB First în API)
+- Fi?iere config: packages.config, Web.config (connection strings)
+- Migra?ii: Enable-Migrations, Add-Migration, Update-Database (Code First)
+
+Newtonsoft.Json 13.0.4
+- NuGet: Newtonsoft.Json
+- Utilizare: Serializare/deserializare JSON în Web API
+- Config: WebApiConfig.vb ? config.Formatters.JsonFormatter.SerializerSettings
+- Avantaj: suport mai bun pentru tipuri complexe decât serializer-ul nativ
+
+Microsoft.AspNet.WebApi.Cors 5.3.0
+- NuGet: Microsoft.AspNet.WebApi.Cors
+- Utilizare: Permite apeluri API cross-origin (ex: din Angular/React)
+- Config: WebApiConfig.vb ? config.EnableCors()
+- Header-e: Access-Control-Allow-Origin: * (sau restrictiv)
+
+Bootstrap 5.3.0
+- NuGet: bootstrap (Twitter)
+- Utilizare: Grid system, navbar, butoane (baza pentru stilizare)
+- Fi?iere: Content/bootstrap.css, Scripts/bootstrap.js
+- Customizare: suprascris cu pastel-theme.css ?i planuri-pastel.css
+
+jQuery 3.7.1
+- NuGet: jQuery
+- Utilizare: DOM manipulation, AJAX calls (ex: ApiCrud.cshtml)
+- Fi?iere: Scripts/jquery-3.7.1.js
+
+--------------------------------------------------------------------------------
+
+2.3 Sec?iuni de cod sau abord?ri deosebite
+-------------------------------------------
+
+1. Dependency Injection custom (f?r? framework)
+
+SimpleResolver.vb:
+Public Class SimpleResolver
+    Implements IDependencyResolver
+
+    Private Shared ReadOnly _cacheInstance As ICache = 
+        New MemoryCacheService()
+
+    Public Function GetService(serviceType As Type) As Object
+        If serviceType Is GetType(IPlanuriService) Then
+            Return New PlanuriService(_cacheInstance)
+        End If
+        If serviceType Is GetType(ICache) Then
+            Return _cacheInstance
+        End If
+        Return Nothing
+    End Function
+End Class
+
+De ce custom?
+- Evit? dependen?a de Unity/Autofac (mai pu?ine NuGet-uri)
+- Singleton explicit pentru cache (important pentru consisten??)
+- Simplitate (doar 2 servicii de injectat)
+
+2. Cache invalidation pattern
+
+La fiecare modificare (Insert/Delete), cache-ul e invalidat explicit:
+_cache.Remove("planuri_utilizare_all")
+
+Alternativ? respins?: Cache expiration pe timp fix (nu garanteaz? 
+consisten?? imediat?)
+
+3. EF Lazy/Proxy disabled pentru JSON
+
+În PlanuriService.GetAll():
+ctx.Configuration.LazyLoadingEnabled = False
+ctx.Configuration.ProxyCreationEnabled = False
+
+Problema rezolvat?: F?r? asta, EF creeaz? proxy objects care cauzeaz? 
+circular references la serializare JSON.
+
+4. Trace logging pentru debugging
+
+În loc de logging framework complex (log4net, NLog):
+Trace.WriteLine("CACHE HIT: planuri_utilizare_all")
+
+Vizualizare: Visual Studio ? View ? Output ? Show output from: Debug
+
+5. Try/Catch în controller + InternalServerError
+
+În PlanUtilizareController.vb (API):
+Try
+    Dim planuri = _service.GetAll()
+    Return Ok(planuri)
+Catch ex As Exception
+    Trace.WriteLine("ERROR in GET /api/PlanUtilizare")
+    Trace.WriteLine(ex.ToString())
+    Return InternalServerError(ex)
+End Try
+
+Avantaj: Client prime?te r?spuns HTTP 500 + detalii error (în dev mode)
+
+6. Search + Sort în MVC
+
+PlanUtilizareController.cs:
+public async Task<ActionResult> Index(string search, string sort)
+{
+    var planuri = await db.PlanuriUtilizare.ToListAsync();
+    
+    // Filtrare
+    if (!string.IsNullOrEmpty(search))
+    {
+        planuri = planuri.Where(p => 
+            p.Nume.ToLower().Contains(search.ToLower()) || 
+            (p.Descriere != null && 
+             p.Descriere.ToLower().Contains(search.ToLower()))
+        ).ToList();
+    }
+    
+    // Sortare
+    if (sort == "nume")
+        planuri = planuri.OrderBy(p => p.Nume).ToList();
+    else if (sort == "limita")
+        planuri = planuri.OrderByDescending(p => p.LimitaLucrari ?? 0)
+                         .ToList();
+    
+    return View(planuri);
+}
+
+Avantaj: Utilizatorul poate filtra ?i sorta planurile în timp real
+
+7. CSS custom pentru UI pastel
+
+Dou? fi?iere:
+- pastel-theme.css ? stiluri globale (navbar, butoane, carduri)
+- planuri-pastel.css ? stiluri specifice paginii de planuri
+
+Gradient buttons:
+.btn-soft {
+    background: linear-gradient(135deg, #c77dff, #e5b3fe);
+    box-shadow: 0 10px 22px rgba(199,125,255,.22);
+    transition: all .18s ease;
+}
+.btn-soft:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(199,125,255,.32);
+}
+
+Efect: Butoane cu shadow animat la hover (UX pl?cut)
+
+8. Responsive grid pentru carduri planuri
+
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+@media (max-width: 900px) {
+    .plans-grid { grid-template-columns: 1fr; }
+}
+
+Comportament: 3 coloane desktop, 1 coloan? mobil (f?r? biblioteci grid 
+externe)
+
+9. View-specific CSS cu @section
+
+În Index.cshtml (planuri):
+@section Styles {
+    <link href="~/Content/planuri-pastel.css" rel="stylesheet" />
+}
+
+În _Layout.cshtml:
+@RenderSection("Styles", required: false)
+
+Avantaj: CSS înc?rcat doar pe paginile care îl folosesc (performan??)
+
+10. Validare AntiForgeryToken
+
+În toate POST-urile MVC:
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<ActionResult> Create(PlanUtilizare plan) { ... }
+
+În views:
+@using (Html.BeginForm()) {
+    @Html.AntiForgeryToken()
+    ...
+}
+
+Securitate: Prevenire CSRF attacks
+
+11. Async/Await în MVC pentru DB queries
+
+public async Task<ActionResult> Index()
+{
+    return View(await db.PlanuriUtilizare.ToListAsync());
+}
+
+Avantaj: Thread pool mai eficient (nu blocheaz? thread-uri la I/O DB)
+
+
+================================================================================
+3. UTILIZARE
+================================================================================
+
+3.1 Pa?ii de instalare — pentru programator
+--------------------------------------------
+
+Cerin?e software:
+- Visual Studio 2019/2022 (Community/Professional/Enterprise)
+- .NET Framework 4.7.2 SDK
+- SQL Server 2017+ (LocalDB, Express sau Full)
+- IIS Express (inclus în VS)
+- Git (op?ional, pentru clone repository)
+
+Pa?i:
+
+1. Clonare repository
+git clone https://github.com/ariana17a/ArtTherapy.git
+cd ArtTherapy
+
+2. Deschidere solution
+- Deschide ArtTherapy.sln în Visual Studio
+- Solution Explorer ar trebui s? arate:
+  Solution 'ArtTherapy'
+      - ArtTherapy_MVC
+      - ArtTherapy_API
+      - Repository_CodeFirst
+      - Repository_DBFirst
+      - LibrarieModele
+      - NivelAccesDate_DBFirst
+
+3. Restaurare pachete NuGet
+- Right-click pe Solution ? Restore NuGet Packages
+- SAU: Tools ? NuGet Package Manager ? Package Manager Console
+  Update-Package -reinstall
+
+4. Configurare connection string
+
+Pentru MVC (Code First):
+- Fi?ier: ArtTherapy_MVC/Web.config
+- G?se?te:
+<connectionStrings>
+    <add name="ArtTherapyCodeFirstContext"
+         connectionString="Data Source=(localdb)\MSSQLLocalDB;
+                          Initial Catalog=ArtTherapyDB;
+                          Integrated Security=True"
+         providerName="System.Data.SqlClient" />
+</connectionStrings>
+
+- Modific? Data Source dac? folose?ti alt? instan?? SQL Server:
+  * LocalDB: (localdb)\MSSQLLocalDB
+  * SQL Express: .\SQLEXPRESS
+  * SQL Server full: localhost sau <server_name>
+
+Pentru API (DB First):
+- Fi?ier: ArtTherapy_API/Web.config
+- Aceea?i procedur? (caut? ArtTherapyEntities sau Model1)
+
+5. Creare baz? de date (Code First)
+
+Op?iunea A — Migra?ii automate (recomandat):
+- Deschide Package Manager Console (View ? Other Windows ? 
+  Package Manager Console)
+- Seteaz? Default project: Repository_CodeFirst
+- Ruleaz?:
+  Enable-Migrations -ContextTypeName ArtTherapyCodeFirstContext
+  Add-Migration InitialCreate
+  Update-Database -Verbose
+
+- Verific? în SQL Server Object Explorer ? Databases ? ArtTherapyDB ? Tables
+
+Op?iunea B — Script SQL manual:
+- Dac? migr?rile e?ueaz?, folose?te script-ul SQL de la sec?iunea 
+  "Instalare la beneficiar" (mai jos)
+
+6. Verificare DB First (EDMX)
+
+- Deschide Repository_DBFirst/Model1.edmx
+- Dac? vezi erori "Connection string not found":
+  * Right-click pe Model1.edmx ? Update Model from Database
+  * Connection string ? alege connection string-ul din Web.config
+  * Finish ? regenereaz? clasele
+
+7. Build solution
+Build ? Rebuild Solution
+
+- Verific? Output window (Ctrl+W, O) pentru erori
+- Toate proiectele ar trebui s? compileze f?r? erori
+
+8. Setare startup projects
+
+Op?iunea A — Doar MVC:
+- Right-click pe ArtTherapy_MVC ? Set as Startup Project
+- F5 sau Start Debugging
+- Browser ? https://localhost:44302/ (port poate diferi)
+
+Op?iunea B — MVC + API simultan:
+- Right-click pe Solution ? Properties
+- Startup Project ? Multiple startup projects
+- Seteaz?:
+  * ArtTherapy_MVC: Start
+  * ArtTherapy_API: Start
+- Apply ? OK
+- F5 ? se vor deschide 2 browsere (unul pentru MVC, unul pentru API)
+
+9. Testare func?ionalitate
+
+În MVC:
+- Navigheaz? la Planuri (navbar)
+- Click Creeaz? plan nou ? completeaz? formular ? Submit
+- Verific? c? planul apare în list?
+- Testeaz? Search: caut? "Free" ? vezi doar planul Free
+- Testeaz? Sort: sorteaz? dup? "Nume (A-Z)" ? vezi lista sortat?
+
+În API:
+- Browser ? https://localhost:44311/api/PlanUtilizare (port poate diferi)
+- Ar trebui s? vezi JSON cu lista de planuri
+- Pentru DELETE/POST, folose?te Postman sau Fiddler:
+  * POST https://localhost:44311/api/PlanUtilizare
+    Body (JSON):
+    {
+      "nume": "Test Plan",
+      "descriere": "Descriere test",
+      "limita_lucrari": 10,
+      "emotii_extinse": true,
+      "feedback_deblocabil": true,
+      "sesiuni_terapie": true,
+      "chat_securizat": true
+    }
+  
+  * DELETE https://localhost:44311/api/PlanUtilizare/1
+
+10. Verificare cache (în Output window)
+- View ? Output ? Show output from: Debug
+- GET prima dat? ? ar trebui s? vezi: 
+  "CACHE MISS: planuri_utilizare_all"
+- GET a doua oar? ? "CACHE HIT: planuri_utilizare_all"
+- Dup? POST/DELETE ? "Invalidating cache: planuri_utilizare_all"
+
+--------------------------------------------------------------------------------
+
+3.2 Pa?ii de instalare — pentru beneficiar (deployment)
+--------------------------------------------------------
+
+Cerin?e software:
+- Windows Server 2016+ SAU Windows 10/11
+- IIS 10+ (activat în Windows Features)
+- .NET Framework 4.7.2 Runtime (descarc? de la Microsoft)
+- SQL Server 2017+ Express/Standard (gratuit: SQL Server 2022 Express)
+
+Pa?i:
+
+1. Activare IIS
+
+Windows 10/11:
+- Control Panel ? Programs ? Turn Windows features on or off
+- Bifeaz?:
+  [x] Internet Information Services
+    [x] Web Management Tools ? IIS Management Console
+    [x] World Wide Web Services
+      [x] Application Development Features ? ASP.NET 4.8
+      [x] Common HTTP Features (toate)
+
+Windows Server:
+- Server Manager ? Add Roles and Features
+- Server Roles ? Web Server (IIS)
+- Role Services ? ASP.NET 4.8, .NET Framework 4.8
+
+2. Instalare SQL Server
+
+- Descarc? SQL Server 2022 Express (gratuit)
+- Instalare ? Basic sau Custom
+- La final, noteaz?:
+  * Instance name (default: SQLEXPRESS)
+  * Connection string: .\SQLEXPRESS sau localhost\SQLEXPRESS
+
+3. Creare baz? de date
+
+Op?iunea A — SQL Server Management Studio (SSMS):
+- Descarc? ?i instaleaz? SSMS (gratuit de la Microsoft)
+- Connect to Server ? .\SQLEXPRESS (Windows Authentication)
+- New Query ? copiaz? ?i ruleaz? script-ul:
+
+CREATE DATABASE ArtTherapyDB;
+GO
+
+USE ArtTherapyDB;
+GO
+
+-- Tabel planuri_utilizare
+CREATE TABLE planuri_utilizare (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    nume NVARCHAR(100) NOT NULL,
+    descriere NVARCHAR(500),
+    limita_lucrari INT,
+    emotii_extinse BIT DEFAULT 0,
+    feedback_deblocabil BIT DEFAULT 0,
+    sesiuni_terapie BIT DEFAULT 0,
+    chat_securizat BIT DEFAULT 0
+);
+
+-- Date demo
+INSERT INTO planuri_utilizare (nume, descriere, limita_lucrari, 
+    emotii_extinse, feedback_deblocabil, sesiuni_terapie, chat_securizat)
+VALUES
+('FREE', 'Un prim pas în lumea terapiei prin art?.', 5, 1, 1, 1, 1),
+('PRO Pre?: 19,99 € / lun?', 
+ 'Pentru cei care î?i doresc s? lucreze constant cu emo?iile lor.', 
+ 15, 1, 1, 1, 1),
+('PREMIUM 29,99 € / lun?', 
+ 'O experien?? complet? de terapie prin art?.', 
+ 25, 1, 1, 1, 1);
+
+-- Tabel feedbacks (op?ional, dac? exist? în aplica?ie)
+CREATE TABLE feedbacks (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    UtilizatorId INT,
+    LucareArtisticaId INT,
+    TextFeedback NVARCHAR(MAX),
+    DataFeedback DATETIME DEFAULT GETDATE()
+);
+
+Op?iunea B — sqlcmd (command line):
+sqlcmd -S .\SQLEXPRESS -E -i script_create_db.sql
+
+4. Publicare aplica?ie din Visual Studio
+
+Pentru MVC:
+- Right-click pe ArtTherapy_MVC ? Publish
+- Target: Folder
+- Folder location: C:\inetpub\wwwroot\ArtTherapy_MVC
+- Configuration: Release
+- Publish
+
+Pentru API:
+- Right-click pe ArtTherapy_API ? Publish
+- Target: Folder
+- Folder location: C:\inetpub\wwwroot\ArtTherapy_API
+- Publish
+
+5. Configurare Web.config în folderul publicat
+
+Pentru MVC (C:\inetpub\wwwroot\ArtTherapy_MVC\Web.config):
+- G?se?te <connectionStrings> ?i modific?:
+<add name="ArtTherapyCodeFirstContext"
+     connectionString="Data Source=.\SQLEXPRESS;
+                      Initial Catalog=ArtTherapyDB;
+                      Integrated Security=True"
+     providerName="System.Data.SqlClient" />
+
+- Dac? SQL Server e pe alt server:
+connectionString="Data Source=192.168.1.100;
+                 Initial Catalog=ArtTherapyDB;
+                 User ID=sa;
+                 Password=<password>"
+
+Pentru API (C:\inetpub\wwwroot\ArtTherapy_API\Web.config):
+- Aceea?i procedur? pentru connection string-ul ArtTherapyEntities
+
+6. Creare site-uri în IIS
+
+Pentru MVC:
+- Deschide IIS Manager (Start ? inetmgr)
+- Sites ? Right-click ? Add Website
+  * Site name: ArtTherapy_MVC
+  * Physical path: C:\inetpub\wwwroot\ArtTherapy_MVC
+  * Binding:
+    - Type: http
+    - IP: All Unassigned
+    - Port: 8080 (sau alt port liber)
+    - Host name: (gol sau arttherapy.local)
+  * OK
+
+Pentru API:
+- Sites ? Right-click ? Add Website
+  * Site name: ArtTherapy_API
+  * Physical path: C:\inetpub\wwwroot\ArtTherapy_API
+  * Binding:
+    - Port: 8081 (diferit de MVC!)
+  * OK
+
+7. Configurare Application Pool
+
+Pentru fiecare site:
+- Application Pools ? g?se?te pool-ul site-ului (ex: ArtTherapy_MVC)
+- Right-click ? Basic Settings
+  * .NET CLR Version: .NET CLR Version v4.0.30319
+  * Managed Pipeline Mode: Integrated
+- Right-click ? Advanced Settings
+  * Identity: ApplicationPoolIdentity (sau cont specific)
+
+8. Permisiuni folder
+
+Pentru fiecare folder publicat:
+- Right-click pe folder (ex: C:\inetpub\wwwroot\ArtTherapy_MVC)
+- Properties ? Security tab ? Edit
+- Add ? IIS AppPool\ArtTherapy_MVC (numele pool-ului)
+- Permissions: Read & Execute, List folder contents, Read
+- OK
+
+9. Testare
+
+MVC:
+- Browser ? http://localhost:8080 (sau IP-ul serverului)
+- Ar trebui s? vezi pagina Home
+
+API:
+- Browser ? http://localhost:8081/api/PlanUtilizare
+- Ar trebui s? vezi JSON cu planurile
+
+10. Troubleshooting
+
+Eroare "500 Internal Server Error":
+- IIS Manager ? site ? Error Pages ? Edit Feature Settings ? 
+  Detailed errors
+- Reîncarc? pagina ? ar trebui s? vezi eroarea detaliat?
+- Cele mai comune:
+  * Connection string gre?it ? verific? Web.config
+  * Baz? de date nu exist? ? reruleaz? script SQL
+  * Permisiuni lips? ? adaug? IIS AppPool\<site_name> cu Read
+
+Eroare "Could not load file or assembly":
+- Asigur?-te c? folderul bin con?ine toate DLL-urile 
+  (EntityFramework.dll, Newtonsoft.Json.dll, etc.)
+- Republic? din Visual Studio
+
+--------------------------------------------------------------------------------
+
+3.3 Mod de utilizare (user guide)
+----------------------------------
+
+Pentru utilizator final:
+
+1. Accesare aplica?ie
+- Browser (Chrome/Firefox/Edge) ? http://<server_address>:8080
+- Homepage ? vezi 3 carduri:
+  * Terapie prin art?: Descriere beneficii
+  * Terapeu?i acredita?i: Info form?ri
+  * Planuri flexibile: Link c?tre planuri
+
+2. Vizualizare planuri
+- Navbar ? Click Planuri
+- Vezi 3 carduri (sau mai multe):
+  * FREE: 5 lucr?ri, 1 sesiune
+  * PRO: 15 lucr?ri, 5 sesiuni, badge "Popular"
+  * PREMIUM: 25 lucr?ri, 10 sesiuni
+- Fiecare card afi?eaz?:
+  * Nume + descriere
+  * Iconi?e beneficii (emo?ii, feedback, chat, sesiuni)
+  * Limit? lucr?ri
+  * Butoane: Alege planul / Edit / Delete
+
+3. Search ?i Sort
+- Search box: Caut? plan dup? nume sau descriere (ex: "Free")
+- Dropdown Sort: Sorteaz? dup? "Nume (A-Z)" sau "Limit? lucr?ri"
+- Click Aplic? ? vezi rezultatele filtrate/sortate
+- Click Reseteaz? ? revin toate planurile
+
+4. Creare plan nou
+- Click Creeaz? plan nou (buton roz-violet, sus)
+- Formular:
+  * Nume: ex. "Standard"
+  * Descriere: ex. "Plan echilibrat pentru terapie regulat?"
+  * Limit? lucr?ri: ex. 20
+  * Checkboxes:
+    [x] Emo?ii extinse
+    [x] Feedback deblocabil
+    [x] Sesiuni terapie
+    [x] Chat securizat
+- Click Create ? redirect la lista de planuri
+
+5. Editare plan
+- Pe cardul planului ? Click Edit
+- Formularul e pre-populat cu datele existente
+- Modific? câmpurile dorite
+- Click Save ? redirect la lista actualizat?
+
+6. ?tergere plan
+- Click Delete pe card
+- Pagin? de confirmare ? "Sigur vrei s? ?tergi planul <nume>?"
+- Click Delete (confirmare) ? planul dispare din list?
+- SAU Back to List pentru anulare
+
+7. Detalii plan
+- Click Alege planul (buton principal roz-violet)
+- SAU Click pe numele planului
+- Pagin? cu toate detaliile afi?ate clar
+- Butoane: Edit / Back to List
+
+8. Verificare feedback-uri (dac? func?ionalitatea e implementat?)
+- Navbar ? Feedback-uri
+- List? feedback-uri asociate lucr?rilor artistice
+- Click Adaug? feedback nou ? formular similar
+
+9. Despre aplica?ie
+- Navbar ? Despre
+- Informa?ii despre terapie prin art?
+- 3 carduri cu beneficii
+- Sec?iune "Cum func?ioneaz??"
+
+10. Contact
+- Navbar ? Contact
+- Email contact: apopiiariana17@gmail.com
+
+
+================================================================================
+4. TEHNOLOGII ?I VERSIUNI
+================================================================================
+
+Component?                      Versiune
+-------------------------------------------------------
+.NET Framework                  4.7.2
+ASP.NET MVC                     5.3.0
+ASP.NET Web API                 2.0 (5.3.0 NuGet)
+Entity Framework                6.5.1
+Newtonsoft.Json                 13.0.4
+Bootstrap                       5.3.0
+jQuery                          3.7.1
+SQL Server                      2017+ (compatibil)
+Visual Studio                   2019/2022
+
+
+================================================================================
+5. STRUCTURA SOLU?IEI
+================================================================================
+
+ArtTherapy.sln
+??? ArtTherapy_MVC (ASP.NET MVC 5, C#)
+?   ??? Controllers/
+?   ??? Views/
+?   ??? Models/
+?   ??? Content/ (CSS)
+?   ??? Scripts/ (JS)
+??? ArtTherapy_API (ASP.NET Web API 2, VB.NET)
+?   ??? Controllers/
+?   ??? Services/ (Business Layer)
+?   ??? App_Start/ (DI, Config)
+??? Repository_CodeFirst (C#)
+?   ??? ArtTherapyCodeFirstContext.cs
+??? Repository_DBFirst (C#)
+?   ??? Model1.edmx (DB First EDMX)
+??? LibrarieModele (C#)
+?   ??? PlanUtilizare.cs
+?   ??? Feedback.cs
+??? NivelAccesDate_DBFirst (C#, optional accessor layer)
+
+
+================================================================================
+6. METRICI APLICA?IE
+================================================================================
+
+- Linii de cod (aprox.): ~3000 LOC (f?r? generated code)
+- Num?r clase business: 6 (2 interfe?e + 4 implement?ri)
+- Num?r controllere: 5 (3 MVC + 2 API)
+- Num?r view-uri: ~15 (.cshtml)
+- Tabele DB: 2-5 (în func?ie de features implementate)
+- Endpoints API: 3 (GET, POST, DELETE)
+
+
+================================================================================
+7. DECIZII DE DESIGN NOTABILE
+================================================================================
+
+1. De ce VB.NET în API ?i C# în MVC?
+- Demonstra?ie interoperabilitate .NET (VB ?i C# pot colabora)
+- Proiect educa?ional pentru înv??are ambele limbaje
+
+2. De ce dou? abord?ri ORM (Code First + DB First)?
+- Demonstra?ie flexibilitate EF
+- Code First: rapid development, control model
+- DB First: legacy databases, generare automat? clase
+
+3. De ce cache la nivel Service, nu Controller?
+- Refolosire logic? cache între controllere
+- Testabilitate (mock ICache în unit tests)
+- Single Responsibility (controller-ul nu ?tie de cache)
+
+4. De ce SimpleResolver în loc de Unity/Autofac?
+- Educa?ional: în?elegere mecanism DI
+- Zero dependen?e externe (mai pu?ine NuGet-uri)
+- Suficient pentru aplica?ie mic? (2-3 servicii)
+
+5. De ce ConcurrentDictionary în loc de MemoryCache framework?
+- Control total asupra TTL ?i invalid?rii
+- Evitare probleme serializare EF proxy objects
+- Thread-safe f?r? dependen?e
+
+
+================================================================================
+8. CONCLUZII
+================================================================================
+
+Proiectul ArtTherapy demonstreaz?:
+- Implementare complet? CRUD pe 2 entit??i (MVC + API)
+- Utilizare avansat? ORM (Code First + DB First)
+- Service Layer cu caching ?i Dependency Injection
+- Logic? business specific? (invalidare cache, logging)
+- UI responsive cu CSS Grid ?i tema pastel
+- Func?ionalitate search ?i sort pentru utilizatori
+- Securitate (AntiForgeryToken, validare input)
+
+Aplica?ia poate fi extins? cu:
+- Autentificare utilizatori (ASP.NET Identity)
+- Upload imagini lucr?ri artistice
+- Sistem de pl??i (Stripe API)
+- Dashboard analytics pentru terapeu?i
+- Notific?ri email (SendGrid/SMTP)
+- Export rapoarte PDF
+- Integrare calendar pentru sesiuni
+
+
+================================================================================
+CAPTURI ECRAN
+================================================================================
+
+(Adaug? aici capturi de ecran din aplica?ie:)
+
+1. Homepage cu cele 3 carduri informative
+   - Screenshot: /Home/Index
+   - Afi?eaz?: Terapie prin art?, Terapeu?i acredita?i, Planuri flexibile
+
+2. Pagina Planuri cu search/sort
+   - Screenshot: /PlanUtilizare/Index
+   - Afi?eaz?: Carduri planuri, formular search/sort, butoane ac?iuni
+
+3. API Response JSON
+   - Screenshot: Browser la /api/PlanUtilizare
+   - Afi?eaz?: JSON array cu obiectele planuri_utilizare
+
+
+================================================================================
+FIN DOCUMENTA?IE
+================================================================================
+
+Data completare: [Completeaz?]
+Student: Apopii Ariana
+Email: apopiiariana17@gmail.com
+Disciplina: PPAW (Proiectarea ?i Programarea Aplica?iilor Web)
+
+================================================================================

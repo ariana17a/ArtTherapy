@@ -228,7 +228,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Services\ICache.vb" />
     <Compile Include="Services\IPlanuriService.vb" />
+    <Compile Include="Services\MemoryCacheService.vb" />
     <Compile Include="Services\PlanuriService.vb" />
     <Compile Include="ValuesController1.vb" />
   </ItemGroup>
@@ -303,6 +305,7 @@
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <None Include="packages.config" />
+    <Content Include="Content\pastel-theme.css" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -346,6 +349,8 @@
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
     <Folder Include="Properties\" />
+    <Folder Include="Views\ICache\" />
+    <Folder Include="Views\MemoryCacheService\" />
     <Folder Include="Views\PlanUtilizare\" />
   </ItemGroup>
   <ItemGroup>

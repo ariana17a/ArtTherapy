@@ -1,22 +1,49 @@
 ﻿@{
-    ViewBag.Title = "Despre";
+    ViewBag.Title = "Terapia prin artă";
 }
 
-<h2>@ViewBag.Title</h2>
-<h3>ArtTherapy – aplicație pentru suport emoțional prin artă</h3>
+<div class="hero">
+    <h2 class="page-title">Terapia prin artă</h2>
+    <p class="subtle">
+        Terapia prin artă folosește procesul creativ ca instrument de explorare și reglare emoțională.
+        Nu este despre "a desena bine", ci despre a exprima ce e greu de pus în cuvinte, într-un mod sigur și ghidat.
+    </p>
+</div>
 
-<p>
-    ArtTherapy este o aplicație academică ce modelează o platformă de terapie prin artă.
-    Baza de date gestionează:
-</p>
-<ul>
-    <li>planuri de utilizare (Free / Standard / Premium);</li>
-    <li>utilizatori (clienți și terapeuți);</li>
-    <li>lucrări artistice și emoțiile asociate acestora;</li>
-    <li>jurnale de stare (moods) și feedback.</li>
-</ul>
+<div style="height:18px;"></div>
 
-<p>
-    În această etapă laboratorul ilustrează legătura dintre modelul de date Code First,
-    migrații și un proiect ASP.NET MVC care consumă acest model.
-</p>
+<div class="grid-3">
+    <div class="cardx">
+        <div class="cardx-body">
+            <h3>🌿 Reducerea stresului</h3>
+            <p class="subtle">Ritualul creativ poate susține calmarea și revenirea la prezent.</p>
+        </div>
+    </div>
+    <div class="cardx">
+        <div class="cardx-body">
+            <h3>🧠 Clarificarea emoțiilor</h3>
+            <p class="subtle">Culorile, formele și simbolurile pot face emoțiile mai ușor de recunoscut și discutat.</p>
+        </div>
+    </div>
+    <div class="cardx">
+        <div class="cardx-body">
+            <h3>💬 Comunicare și reflecție</h3>
+            <p class="subtle">Lucrările pot fi punct de plecare pentru conversații și insight-uri personale.</p>
+        </div>
+    </div>
+</div>
+
+<div style="height:18px;"></div>
+
+<div class="cardx">
+    <div class="cardx-body">
+        <h3>Cum funcționează în aplicație</h3>
+        <ol class="subtle">
+            <li>Alegi un plan de utilizare potrivit.</li>
+            <li>Încarci lucrări și notezi emoțiile asociate.</li>
+            <li>Primești feedback (în funcție de plan) și urmărești progresul.</li>
+        </ol>
+
+        <a class="btn btn-soft" href="/PlanUtilizare">Vezi planurile</a>
+    </div>
+</div>

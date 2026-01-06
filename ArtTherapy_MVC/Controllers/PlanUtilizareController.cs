@@ -17,9 +17,30 @@ namespace ArtTherapy_MVC.Controllers
         private ArtTherapyCodeFirstContext db = new ArtTherapyCodeFirstContext();
 
         // GET: PlanUtilizare
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult> Index(string search, string sort)
         {
-            return View(await db.PlanuriUtilizare.ToListAsync());
+            var planuri = await db.PlanuriUtilizare.ToListAsync();
+
+            // Filtrare după search
+            if (!string.IsNullOrEmpty(search))
+            {
+                planuri = planuri.Where(p =>
+                    p.Nume.ToLower().Contains(search.ToLower()) ||
+                    (p.Descriere != null && p.Descriere.ToLower().Contains(search.ToLower()))
+                ).ToList();
+            }
+
+            // Sortare
+            if (sort == "nume")
+            {
+                planuri = planuri.OrderBy(p => p.Nume).ToList();
+            }
+            else if (sort == "limita")
+            {
+                planuri = planuri.OrderByDescending(p => p.LimitaLucrari ?? 0).ToList();
+            }
+
+            return View(planuri);
         }
 
         public ActionResult ApiCrud()

@@ -1,14 +1,43 @@
 Imports Repository_DBFirst
+Imports System.Diagnostics
 
 Public Class PlanuriService
     Implements IPlanuriService
 
+    Private ReadOnly _cache As ICache
+    Private Const CACHE_KEY As String = "planuri_utilizare_all"
+
+    Public Sub New(cache As ICache)
+        _cache = cache
+    End Sub
+
     Public Function GetAll() As IEnumerable(Of planuri_utilizare) Implements IPlanuriService.GetAll
-        Using ctx As New ArtTherapyEntities()
-            ctx.Configuration.LazyLoadingEnabled = False
-            ctx.Configuration.ProxyCreationEnabled = False
-            Return ctx.planuri_utilizare.ToList()
-        End Using
+        Try
+            If _cache IsNot Nothing AndAlso _cache.IsSet(CACHE_KEY) Then
+                Trace.WriteLine("CACHE HIT: " & CACHE_KEY)
+                Dim cached = _cache.Get(Of List(Of planuri_utilizare))(CACHE_KEY)
+                If cached IsNot Nothing Then
+                    Return cached
+                End If
+            End If
+
+            Trace.WriteLine("CACHE MISS: " & CACHE_KEY)
+            Using ctx As New ArtTherapyEntities()
+                ctx.Configuration.LazyLoadingEnabled = False
+                ctx.Configuration.ProxyCreationEnabled = False
+
+                Dim data = ctx.planuri_utilizare.ToList()
+
+                If _cache IsNot Nothing Then
+                    _cache.Set(CACHE_KEY, data)
+                End If
+
+                Return data
+            End Using
+        Catch ex As Exception
+            Trace.WriteLine("Error in GetAll: " & ex.ToString())
+            Throw
+        End Try
     End Function
 
     Public Function Insert(p As planuri_utilizare) As planuri_utilizare Implements IPlanuriService.Insert
@@ -25,6 +54,12 @@ Public Class PlanuriService
 
             ctx.planuri_utilizare.Add(entity)
             ctx.SaveChanges()
+
+            If _cache IsNot Nothing Then
+                Trace.WriteLine("Invalidating cache: " & CACHE_KEY)
+                _cache.Remove(CACHE_KEY)
+            End If
+
             Return entity
         End Using
     End Function
@@ -33,9 +68,17 @@ Public Class PlanuriService
         Using ctx As New ArtTherapyEntities()
             Dim entity = ctx.planuri_utilizare.FirstOrDefault(Function(x) x.id = id)
             If entity Is Nothing Then Return False
+
             ctx.planuri_utilizare.Remove(entity)
             ctx.SaveChanges()
+
+            If _cache IsNot Nothing Then
+                Trace.WriteLine("Invalidating cache: " & CACHE_KEY)
+                _cache.Remove(CACHE_KEY)
+            End If
+
             Return True
         End Using
     End Function
+
 End Class
